@@ -32,6 +32,7 @@ with Screen() as screen:
 - [Layers](#layers)
 - [Input](#input)
 - [The app loop](#the-app-loop)
+- [2D game engine](#2d-game-engine)
 - [Widgets](#widgets)
 - [Rendering without a terminal](#rendering-without-a-terminal)
 - [Configuration — every knob](#configuration--every-knob)
@@ -303,6 +304,76 @@ app.run(fps=60)
 Hooks: `start`, `stop`, `tick`, `key`, `mouse`, `resize`, `focus`, `paste`,
 `event` (catch-all). Use `app.step()` to drive frames from your own loop, or
 `app.run(update=fn, draw=False)` to take full control.
+
+---
+
+## 2D game engine
+
+`termrender.game` adds a lightweight **terminal-cell** 2D engine: sprites,
+entities, tile maps, a camera, rectangle collision, input and an update loop.
+It uses the same `Screen` renderer and needs no extra dependencies. Try the
+playable maze from a checkout:
+
+```bash
+pip install -e .
+python examples/maze.py
+```
+
+Use the arrow keys or WASD to collect all the stars; `r` resets and `q` or
+Escape quits. The game needs a terminal at least 36 columns by 13 rows.
+
+A minimal game:
+
+```python
+from termrender import Entity, Game, Key, Scene, Screen, Sprite, Style, Tile, TileMap
+
+world = TileMap(
+    ["##########", "#        #", "#   #    #", "##########"],
+    {"#": Tile("#", solid=True, style=Style(fg="blue"))},
+)
+
+class Player(Entity):
+    def on_event(self, event, scene):
+        if isinstance(event, Key):
+            direction = {"up": (0, -1), "down": (0, 1),
+                         "left": (-1, 0), "right": (1, 0)}.get(event.name)
+            if direction:
+                scene.move(self, *direction)
+
+scene = Scene(world)
+scene.add(Player(1, 1, Sprite.from_text("@", Style(fg="cyan"))))
+Game(scene, Screen(width=20, height=8)).run(fps=30)
+```
+
+- `Scene.add/remove` manage entities; `Scene.overlaps(entity, tag=...)` finds
+  triggers such as collectibles. Override `Entity.update(dt, scene)` or
+  `Scene.update(dt)` for game logic. The default entity update applies `vx` and
+  `vy` in cells per second. Call `super()` when overriding a scene hook if you
+  also want it to dispatch to entities.
+- `Scene.move(entity, dx, dy)` sweeps the entity's rectangular sprite bounds
+  against solid tiles and entities and returns the displacement actually made.
+  It resolves X then Y, permitting wall sliding. Spawn entities outside solid
+  objects; this simple collision system does not resolve existing overlaps.
+- `Sprite.from_text()` accepts multiline, single-cell-width glyphs. Spaces are
+  transparent, but still count toward the rectangular hitbox. Entities draw in
+  ascending `z` order. A `TileMap` is a rectangular list of strings mapping
+  single-character keys to `Tile` objects; unknown keys are empty.
+- `scene.camera.x/y` are the world coordinates at the screen's top-left;
+  `camera.center_on(entity, screen)` follows an entity. Drawing clips to the
+  screen. Override `Scene.draw(screen, layer)` to add a HUD, calling `super()`
+  to draw the world first.
+- `Game` owns a dedicated screen layer (default name `game`), which it clears
+  and repaints each frame. Other screen layers are left alone. Use another
+  `layer=` name if that one already exists. The normal `run()` loop uses
+  termrender's key events, not held-key state; movement from key presses follows
+  the terminal's key-repeat behavior. Quit keys default to `q`, Escape and
+  Ctrl-C and can be changed with `game.app.quit_keys`.
+
+For deterministic, terminal-free tests, create `Screen(quiet=True, ...)`, then
+call `game.step(dt, events=[Key("right")])` and inspect `screen.frame()`.
+`step` accepts explicit events and does not poll input or apply the loop's quit
+keys. `run` starts and restores the screen if it was not already started;
+when supplying an already-started screen, the caller owns its cleanup.
 
 ---
 

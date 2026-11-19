@@ -36,6 +36,7 @@ from .buffer import Buffer
 from .cell import Cell
 from .chars import ASCII, DOUBLE, HEAVY, ROUNDED, SHARP, BoxChars, box_set
 from .config import Config, Stats, is_tty, terminal_size
+from .game import Camera, Entity, Game, Rect, Scene, Sprite, Tile, TileMap
 from .input import (
     Event,
     FocusEvent,
@@ -96,6 +97,9 @@ __all__ = [
     "BOLD",
     "Buffer",
     "Cell",
+    "Camera",
+    "Entity",
+    "Game",
     "Color",
     "ColorDepth",
     "Config",
@@ -114,6 +118,11 @@ __all__ = [
     "Parser",
     "PasteEvent",
     "REVERSED",
+    "Rect",
+    "Scene",
+    "Sprite",
+    "Tile",
+    "TileMap",
     "ROUNDED",
     "ResizeEvent",
     "SHARP",

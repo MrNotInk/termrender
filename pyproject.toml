@@ -38,8 +38,9 @@ dev = ["pytest>=7", "ruff>=0.5"]
 Homepage = "https://github.com/example/termrender"
 Issues = "https://github.com/example/termrender/issues"
 
-[tool.setuptools.packages.find]
-include = ["termrender*", "tred*"]
+[tool.setuptools]
+packages = ["termrender"]
+package-dir = {termrender = "."}
 
 [tool.setuptools.package-data]
 termrender = ["py.typed"]
